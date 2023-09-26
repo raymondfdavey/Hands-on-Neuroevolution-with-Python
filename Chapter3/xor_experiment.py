@@ -19,6 +19,12 @@ out_dir = os.path.join(local_dir, 'out')
 xor_inputs  = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)]
 xor_outputs = [   (0.0,),     (1.0,),     (1.0,),     (0.0,)]
 
+xor_3_inputs = [(0.0, 0.0, 0.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0), (1.0, 1.0, 0.0), (0.0, 1.0, 1.0), (1.0, 0.0, 1.0)  ]
+xor_3_outputs = [   (0.0,),            (1.0,),         (1.0,),          (1.0,),        (1.0,),             (0.0,),         (0.0,),            (0.0,)]
+
+# specify whether a two xor or 3xor mechanism
+input_number = 3
+
 def eval_fitness(net):
     """
     Evaluates fitness of the genome that was used to generate 
@@ -29,12 +35,23 @@ def eval_fitness(net):
         The fitness score - the higher score the means the better 
         fit organism. Maximal score: 16.0
     """
-    error_sum = 0.0
-    for xi, xo in zip(xor_inputs, xor_outputs):
-        output = net.activate(xi)
-        error_sum += abs(output[0] - xo[0])
-    # Calculate amplified fitness
-    fitness = (4 - error_sum) ** 2
+    if input_number == 2:
+        error_sum = 0.0
+        for xi, xo in zip(xor_inputs, xor_outputs):
+            output = net.activate(xi)
+            error_sum += abs(output[0] - xo[0])
+        # Calculate amplified fitness
+        fitness = (4 - error_sum) ** 2
+        
+        
+    elif input_number == 3:
+        error_sum = 0.0
+        for xi, xo in zip(xor_3_inputs, xor_3_outputs):
+            output = net.activate(xi)
+            error_sum += abs(output[0] - xo[0])
+        # Calculate amplified fitness
+        fitness = (8 - error_sum) ** 2
+        
     return fitness
 
 def eval_genomes(genomes, config):
@@ -53,10 +70,16 @@ def eval_genomes(genomes, config):
         config: The configuration settings with algorithm
                 hyper-parameters
     """
-    for genome_id, genome in genomes:
-        genome.fitness = 4.0
-        net = neat.nn.FeedForwardNetwork.create(genome, config)
-        genome.fitness = eval_fitness(net)
+    if input_number == 2:
+        for genome_id, genome in genomes:
+            genome.fitness = 4.0
+            net = neat.nn.FeedForwardNetwork.create(genome, config)
+            genome.fitness = eval_fitness(net)
+    if input_number == 3:
+        for genome_id, genome in genomes:
+            genome.fitness = 8.0
+            net = neat.nn.FeedForwardNetwork.create(genome, config)
+            genome.fitness = eval_fitness(net)
 
 def run_experiment(config_file):
     """
@@ -83,7 +106,7 @@ def run_experiment(config_file):
     p.add_reporter(neat.Checkpointer(5, filename_prefix='out/neat-checkpoint-'))
 
     # Run for up to 300 generations.
-    best_genome = p.run(eval_genomes, 300)
+    best_genome = p.run(eval_genomes, 2500)
 
     # Display the best genome among generations.
     print('\nBest genome:\n{!s}'.format(best_genome))
@@ -91,9 +114,17 @@ def run_experiment(config_file):
     # Show output of the most fit genome against training data.
     print('\nOutput:')
     net = neat.nn.FeedForwardNetwork.create(best_genome, config)
-    for xi, xo in zip(xor_inputs, xor_outputs):
-        output = net.activate(xi)
-        print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
+    
+    
+    if input_number == 2:
+        for xi, xo in zip(xor_inputs, xor_outputs):
+            output = net.activate(xi)
+            print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
+    elif input_number == 3:
+        for xi, xo in zip(xor_3_inputs, xor_3_outputs):
+            output = net.activate(xi)
+            print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
+
 
     # Check if the best genome is an adequate XOR solver
     best_genome_fitness = eval_fitness(net)
@@ -103,7 +134,10 @@ def run_experiment(config_file):
         print("\n\nFAILURE: Failed to find XOR problem solver!!!")
 
     # Visualize the experiment results
-    node_names = {-1:'A', -2: 'B', 0:'A XOR B'}
+    if input_number == 2:
+        node_names = {-1:'A', -2: 'B',0:'A XOR B'}
+    elif input_number ==3:   
+        node_names = {-1:'A', -2: 'B',-3:'C', 0:'A XOR B'}
     visualize.draw_net(config, best_genome, True, node_names=node_names, directory=out_dir)
     visualize.plot_stats(stats, ylog=False, view=True, filename=os.path.join(out_dir, 'avg_fitness.svg'))
     visualize.plot_species(stats, view=True, filename=os.path.join(out_dir, 'speciation.svg'))

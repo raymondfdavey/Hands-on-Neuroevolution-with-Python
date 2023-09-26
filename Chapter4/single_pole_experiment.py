@@ -22,6 +22,8 @@ out_dir = os.path.join(out_dir, 'single_pole')
 
 # The number of additional simulation runs for the winner genome
 additional_num_runs = 100
+
+
 # The number os steps in additional simulation runs
 additional_steps = 200
 

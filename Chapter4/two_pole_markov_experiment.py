@@ -90,7 +90,7 @@ def run_experiment(config_file, n_generations=100, silent=False):
         True if experiment finished with successful solver found. 
     """
     # set random seed
-    seed = 1559231616#int(time.time())#
+    seed = 1559231626#int(time.time())#
     random.seed(seed)
 
     # Load configuration.
